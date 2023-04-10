@@ -20,65 +20,76 @@ texto_solicitarValoresFailsafe: .asciz "Um dos valores fornecidos é invalido, te
 
 .globl main
 main:
-	addi s0, zero, 16 # Maximo de dias permitidos
-	addi s1, zero, 32 # Maximo de alunos permitidos
-	addi s2, zero, 1 # 1 (usado p/ opção de sim/não na presença)
+	li s0, 16 # Maximo de dias permitidos
+	li s1, 32 # Maximo de alunos permitidos
 	jal loop
  
 # Loop principal
 loop:
-	addi a0, zero, 0 # Dia de aula escolhido
-	addi a1, zero, 0 # Aluno escolhido
-	addi a2, zero, 0 # Registro de presença ou ausência
+# Reset dos parametros
+	li a0, 0 # Dia de aula escolhido
+	li a1, 0 # Aluno escolhido
+	li a2, 0 # Registro de presença ou ausência
+	
+# Jump-and-link para a solicitação de valores
 	jal solicitarValores # Solicitação dos valores p/ o usuario
+	
+# Aplicação da alteração desejada
+	jal editarAluno
+
+# TODO: REMOVER APÓS CONCLUSÃO
 	j exit # Finalização do programa
+	
+# Voltando para o começo do loop
+	j loop # jal (jump and link aumenta stack, jump aparentemente não)
 	
 # Solicita o dia, aluno e registro de presença/falta
 solicitarValores:
-#  blt a1, 0, loop # número do aluno não pode ser negativo
-#  blt a1, t1 # número do aluno não pode ser maior ou igual ao número máximo de alunos
-#  blt a2, 0, loop # registro deve ser 0 ou 1
-#  bge a2, 2, loop # registro deve ser 0 ou 1
-
 # Obtem data da aula
-	addi a7, zero, 4 # Carrega PrintString
+	li a7, 4 # Carrega PrintString
 	la a0, texto_fornecaAula # Fornece a string
 	ecall # executa PrintString
 	
-	addi a7, zero, 5 # Carrega ReadInt
+	li a7, 5 # Carrega ReadInt
 	ecall # Executa ReadInt
-	mv t0, a0# Armazena resultado da operação
+	mv t0, a0 # temp0 = dia
 	
 	# branches de Failsafe para o dia
 	blt a0, zero, solicitarValoresFailsafe # dia < 0
 	bge a0, s0,solicitarValoresFailsafe # dia >= totalDias
 
 # Obtem aluno
-	addi a7, zero, 4 # Carrega PrintString
+	li a7, 4 # Carrega PrintString
 	la a0, texto_fornecaAluno # Fornece a string
 	ecall # executa PrintString
 	
-	addi a7, zero, 5 # Carrega ReadInt
+	li a7, 5 # Carrega ReadInt
 	ecall # Executa ReadInt
-	mv t1, a0# Armazena resultado da operação
+	mv t1, a0# temp1 = aluno
 	
 	# branches de Failsafe para o aluno
 	blt a0, zero, solicitarValoresFailsafe # aluno < 0
 	bge a0, s1,solicitarValoresFailsafe # aluno >= totalAlunos
 	
 # Obtem presenca
-	addi a7, zero, 4 # Carrega PrintString
+	li a7, 4 # Carrega PrintString
 	la a0, texto_fornecaPresenca # Fornece a string
 	ecall # executa PrintString
 	
-	addi a7, zero, 5 # Carrega ReadInt
+	li a7, 5 # Carrega ReadInt
 	ecall # Executa ReadInt
-	mv t2, a0# Armazena resultado da operação
+	mv t2, a0# temp2 = presença
 	
 	# branches de Failsafe para a presença
 	blt a0, zero, solicitarValoresFailsafe # presença < 0
-	bgt a0, s2,solicitarValoresFailsafe # presença > 1
 	
+	li t6, 1 # Carrega 1 temporariamente p/ proxima branch
+	bgt a0, t6,solicitarValoresFailsafe # presença > 1
+	
+# Preparações p/ retornar os 3 valores
+	mv a0, t0 # arg0 = temp0
+	mv a1, t1 # arg1 = temp1
+	mv a2, t2 # arg2 = temp2
 ret # Retorna a origem da chamada
 
 # Um dos valores fornecidos está fora dos parametros, então a solicitação continua	
@@ -87,6 +98,40 @@ solicitarValoresFailsafe:
 	la a0, texto_solicitarValoresFailsafe # Fornece a string
 	ecall # executa PrintString
 j solicitarValores # retorna p/ SolicitarValores, mantendo o retorno ainda em loop
+
+# Com os valores prontos, já é possível modificar o bit do aluno p/ o desejado
+editarAluno:
+
+# Transformação de parametros p/ valores temporarios
+mv t0, a0 # t0 = a0 (dia)
+mv t1, a1 # t1 = a1 (aluno)
+mv t2, a2 # t2 = a2 (presença)
+
+# Criação da mascara binária
+ # 0 ou 1, como definido pela presença do aluno em t2, é movido para a
+ # esquerda (t1, aluno escolhido) vezes, criando assim uma bitmask
+ # onde 31 bits são zero, unica exceção é o do aluno escolhido, sendo 0 ou 1
+ 
+sll t2, t2, t1 # move o valor desejado (t2) pela quantidade de indices (t1)
+mv t3, t2 # Mascara binaria normal armazenada em t3
+xori t2, t2, 0xFFFFFFFF # Inverte a mascara binária, valor padrão agora é 1
+
+# Carregamento do array no dia correto
+# t4 vai ser o indice no formato acessivel para carregar t5!
+
+slli t4, t0, 2 # multiplica o dia por 4 p/ obter o valor em bytes
+la t5, arrayAulas # carrega o arrayAulas no registrador temp5
+add t5, t5, t4 # t5 = arrayAulas[t4]
+
+# Aplicação da mascara binaria
+
+and t4, t4, t2 # Zera o aluno escolhido usando a mascara binaria invertida em AND
+or t4, t4, t3 # Define o aluno escolhido com a mascara binaria
+
+# Salvamento dos resultados para o arrayAulas
+sw t4,(t5)
+
+ret # Retorna a origem da chamada
 
 # Encerra o programa com codigo 0 (sucesso)
 exit:
