@@ -1,6 +1,6 @@
 .data
 # Array de 16 valores (dias), cada um contendo um int de 32 bits (aluno)
-# Por padr„o, todos est„o presentes (definidos como 1)
+# Por padr√£o, todos est√£o presentes (definidos como 1)
 # 0xFFFFFFFF = 1111 1111 1111 1111 1111 1111 1111 1111
 arrayAulas:
   .word 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -9,12 +9,13 @@ arrayAulas:
         0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
 
 # Mensagens de solicitarValores
-texto_fornecaAula: .asciz "ForneÁa o dia da aula (entre 0 e 15): "
+texto_fornecaAula: .asciz "Forne√ßa o dia da aula (entre 0 e 15): "
 texto_fornecaAluno: .asciz "Escolha um aluno (entre 0 e 31): "
-texto_fornecaPresenca: .asciz "Este aluno esta/esteve presente?\n1- Sim\n0- N„o\n"
+texto_fornecaPresenca: .asciz "Este aluno esta/esteve presente?\n1- Sim\n0- N√£o\n"
+texto_sucesso: .asciz "Opera√ß√£o concluida com sucesso\n"
 
 # Mensagens de solicitarValoresFailsafe
-texto_solicitarValoresFailsafe: .asciz "Um dos valores fornecidos È invalido, tente novamente\n\n"
+texto_solicitarValoresFailsafe: .asciz "Um dos valores fornecidos √© invalido, tente novamente\n\n"
 
 .text
 
@@ -29,21 +30,18 @@ loop:
 # Reset dos parametros
 	li a0, 0 # Dia de aula escolhido
 	li a1, 0 # Aluno escolhido
-	li a2, 0 # Registro de presenÁa ou ausÍncia
+	li a2, 0 # Registro de presen√ßa ou aus√™ncia
 	
-# Jump-and-link para a solicitaÁ„o de valores
-	jal solicitarValores # SolicitaÁ„o dos valores p/ o usuario
+# Jump-and-link para a solicita√ß√£o de valores
+	jal solicitarValores # Solicita√ß√£o dos valores p/ o usuario
 	
-# AplicaÁ„o da alteraÁ„o desejada
+# Aplica√ß√£o da altera√ß√£o desejada
 	jal editarAluno
-
-# TODO: REMOVER AP”S CONCLUS√O
-	j exit # FinalizaÁ„o do programa
 	
-# Voltando para o comeÁo do loop
-	j loop # jal (jump and link aumenta stack, jump aparentemente n„o)
+# Voltando para o come√ßo do loop
+	j loop # jal (jump and link aumenta stack, jump aparentemente n√£o)
 	
-# Solicita o dia, aluno e registro de presenÁa/falta
+# Solicita o dia, aluno e registro de presen√ßa/falta
 solicitarValores:
 # Obtem data da aula
 	li a7, 4 # Carrega PrintString
@@ -78,58 +76,55 @@ solicitarValores:
 	
 	li a7, 5 # Carrega ReadInt
 	ecall # Executa ReadInt
-	mv t2, a0# temp2 = presenÁa
+	mv t2, a0# temp2 = presen√ßa
 	
-	# branches de Failsafe para a presenÁa
-	blt a0, zero, solicitarValoresFailsafe # presenÁa < 0
+	# branches de Failsafe para a presen√ßa
+	blt a0, zero, solicitarValoresFailsafe # presen√ßa < 0
 	
 	li t6, 1 # Carrega 1 temporariamente p/ proxima branch
-	bgt a0, t6,solicitarValoresFailsafe # presenÁa > 1
+	bgt a0, t6,solicitarValoresFailsafe # presen√ßa > 1
 	
-# PreparaÁıes p/ retornar os 3 valores
+# Prepara√ß√µes p/ retornar os 3 valores
 	mv a0, t0 # arg0 = temp0
 	mv a1, t1 # arg1 = temp1
 	mv a2, t2 # arg2 = temp2
 ret # Retorna a origem da chamada
 
-# Um dos valores fornecidos est· fora dos parametros, ent„o a solicitaÁ„o continua	
+# Um dos valores fornecidos est√° fora dos parametros, ent√£o a solicita√ß√£o continua	
 solicitarValoresFailsafe:
 	addi a7, zero, 4 # Carrega PrintString
 	la a0, texto_solicitarValoresFailsafe # Fornece a string
 	ecall # executa PrintString
 j solicitarValores # retorna p/ SolicitarValores, mantendo o retorno ainda em loop
 
-# Com os valores prontos, j· È possÌvel modificar o bit do aluno p/ o desejado
+# Com os valores prontos, j√° √© poss√≠vel modificar o bit do aluno p/ o desejado
 editarAluno:
-
-# TransformaÁ„o de parametros p/ valores temporarios
-mv t0, a0 # t0 = a0 (dia)
-mv t1, a1 # t1 = a1 (aluno)
-mv t2, a2 # t2 = a2 (presenÁa)
-
-# CriaÁ„o da mascara bin·ria
- # 0 ou 1, como definido pela presenÁa do aluno em t2, È movido para a
- # esquerda (t1, aluno escolhido) vezes, criando assim uma bitmask
- # onde 31 bits s„o zero, unica exceÁ„o È o do aluno escolhido, sendo 0 ou 1
- 
-sll t2, t2, t1 # move o valor desejado (t2) pela quantidade de indices (t1)
-mv t3, t2 # Mascara binaria normal armazenada em t3
-xori t2, t2, 0xFFFFFFFF # Inverte a mascara bin·ria, valor padr„o agora È 1
+# Parametros:
+# a0 = dia
+# a1 = aluno
+# a2 = presen√ßa
 
 # Carregamento do array no dia correto
-# t4 vai ser o indice no formato acessivel para carregar t5!
+	slli t1, a0, 2 # multiplica o dia por 4 p/ obter o valor em bytes
+	la t0, arrayAulas # Endere√ßo de arrayAulas √© carregado
+	add t0, t0, t1 # t0 = endere√ßo de arrayAulas[t4]
+	lw t6, arrayAulas # t6 = conteudo de arrayAulas[t4]
+	
+	li t1, 1 # carrega o valor 1 em t1
+	sll t1, t1, a1 # t1 = mascara bin√°ria
+	xori t1, t1, -1 # Invers√£o da mascara bin√°ria, valor padr√£o √© -1
+	
+	and t2, t6, t1 # Limpa o valor do aluno
+	sll t3, a2, a1 # Prepara t3 para ser o novo valor final
+	or t2, t2, t3 # Aplica o valor de presen√ßa (t3) no resultado final
 
-slli t4, t0, 2 # multiplica o dia por 4 p/ obter o valor em bytes
-la t5, arrayAulas # carrega o arrayAulas no registrador temp5
-add t5, t5, t4 # t5 = arrayAulas[t4]
+# Salvamento do resultado para o arrayAulas
+	sw t2,(t0)
 
-# AplicaÁ„o da mascara binaria
-
-and t4, t4, t2 # Zera o aluno escolhido usando a mascara binaria invertida em AND
-or t4, t4, t3 # Define o aluno escolhido com a mascara binaria
-
-# Salvamento dos resultados para o arrayAulas
-sw t4,(t5)
+# Mensagem de conclus√£o
+	li a7, 4 # Carrega PrintString
+	la a0, texto_sucesso # Fornece a string
+	ecall # executa PrintString
 
 ret # Retorna a origem da chamada
 
