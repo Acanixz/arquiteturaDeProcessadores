@@ -1,3 +1,10 @@
+# Disciplina: Arquitetura e Organização de Computadores
+# Atividade: Avaliação 01 – Programação em Linguagem de Montagem
+# Programa 02
+# Grupo: - Hérick Vitor Vieira Bittencourt
+# - Lorina Zondervan
+# - Luiz Augusto Inthurn
+
 .data
 # Array de 16 valores (dias), cada um contendo um int de 32 bits (aluno)
 # Por padrão, todos estão presentes (definidos como 1)

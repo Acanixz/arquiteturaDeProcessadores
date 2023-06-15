@@ -29,14 +29,14 @@ int main(){
 
     for (int i = 0; i < tamanhoVetores; i++) // Entrada de dados do Vetor_A
     {
-        cout << "Vetor_A[" << i+1 << "] = ";
+        cout << "Vetor_A[" << i << "] = ";
         cin >> Vetor_A[i];
         cout << endl;
     }
 
     for (int i = 0; i < tamanhoVetores; i++) // Entrada de dados do Vetor_B
     {
-        cout << "Vetor_B[" << i+1 << "] = ";
+        cout << "Vetor_B[" << i << "] = ";
         cin >> Vetor_B[i];
         cout << endl;
     }
@@ -51,12 +51,12 @@ int main(){
     cout << "Valores substituidos: " << endl;
     for (int i = 0; i < tamanhoVetores; i++) // Display do Vetor_A modificado
     {
-        cout << "Vetor_A[" << i+1 << "] = " << Vetor_A[i] << endl;
+        cout << "Vetor_A[" << i << "] = " << Vetor_A[i] << endl;
     }
 
     for (int i = 0; i < tamanhoVetores; i++) // Display do Vetor_B modificado
     {
-        cout << "Vetor_B[" << i+1 << "] = " << Vetor_B[i] << endl;
+        cout << "Vetor_B[" << i << "] = " << Vetor_B[i] << endl;
     }
 
     cout << "\n"; system("pause"); // remover após completar tudo
